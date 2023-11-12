@@ -1,0 +1,5 @@
+logs/*
+modules/*
+!modules/log_setup.py
+
+!**/.gitkeep
