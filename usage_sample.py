@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import argparse
 import yaml
 import modules.log_setup
@@ -89,6 +90,22 @@ def file_test():
 
     return None
 
+def console_and_file_test():
+    """
+    This is a sample if you want to test the console and file logging functionality combined.
+    """
+
+    console_and_file_logger = modules.log_setup.create_console_logger(name = 'console_logger')
+    console_and_file_logger = modules.log_setup.create_file_logger(name = 'console_logger', loglevel=log_level, log_file=file_logging_file)
+
+    console_and_file_logger.debug('debug message')
+    console_and_file_logger.info('info message')
+    console_and_file_logger.warning('warn message')
+    console_and_file_logger.error('error message')
+    console_and_file_logger.critical('critical message')
+
+    return None
+
 def smtp_test():
     """
     This is a sample if you want to test the SMTP logging functionality.
@@ -127,5 +144,10 @@ def syslog_test():
 
 file_test()
 console_test()
+console_and_file_test()
 #smtp_test()
 #syslog_test()
+
+
+#if sys.stdin and sys.stdin.isatty():
+#    console_test()
