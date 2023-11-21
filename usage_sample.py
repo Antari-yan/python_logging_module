@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import argparse
-import yaml
+from os import path
+from sys import stdin # Only for check if running in terminal
+from argparse import ArgumentParser
+from yaml import safe_load
 import modules.log_setup
 
-file_logging_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'logs/logfile.log')
-smtp_credentials_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'credentials_sample.yml')
+file_logging_file = path.join(path.dirname(path.realpath(__file__)), 'logs/logfile.log')
+#smtp_credentials_file = path.join(path.dirname(path.realpath(__file__)), 'credentials_sample.yml')
+smtp_credentials_file = path.join(path.dirname(path.realpath(__file__)), 'credentials.yml')
 syslog_address = ""
 syslog_port = 1514
 
 
 # Create Argument parser
 default_log_level = "info"
-parser = argparse.ArgumentParser(description="")
+parser = ArgumentParser(description="")
 arg_group_loglevel = parser.add_mutually_exclusive_group()
 arg_group_loglevel.add_argument("-debug", "-DEBUG", action="store_true", help="Sets the Loglevel to DEBUG")
 arg_group_loglevel.add_argument("-info", "-INFO", action="store_true", help="Sets the Loglevel to INFO")
@@ -111,8 +112,9 @@ def smtp_test():
     This is a sample if you want to test the SMTP logging functionality.
     """
 
-    creds_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), smtp_credentials_file)
-    smtp_logger_data = yaml.read(creds_file)
+    creds_file = path.join(path.dirname(path.realpath(__file__)), smtp_credentials_file)
+    with open(creds_file, 'r') as file:
+        smtp_logger_data = safe_load(file)
 
     smtp_logger, smtp_handler = modules.log_setup.create_smtp_logger(mailhost=smtp_logger_data['smtp_mailhost'],
                                                                         port=smtp_logger_data['smtp_port'],
@@ -151,3 +153,6 @@ console_and_file_test()
 
 #if sys.stdin and sys.stdin.isatty():
 #    console_test()
+
+#dd if=/dev/zero bs=10M count=1  | tr '\0' '0' > logs/logfile.log
+#ls -alh logs/

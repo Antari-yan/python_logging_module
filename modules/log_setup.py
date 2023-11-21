@@ -16,17 +16,17 @@ With more handler types, switching to file handler before switching to console o
 Handler Docs: https://docs.python.org/3/library/logging.handlers.html
 """
 
-__version__ = '1.0'
+__version__ = '1.1'
 
-import os
-import sys
-import gzip
+from os import path as os_path, remove as os_remove, rename as os_rename
+from sys import exit as sys_exit
+from gzip import open as open_gzip
 import logging.handlers
-import smtplib
-import datetime
-import time
-import re
-import socket
+from smtplib import SMTP
+from datetime import datetime
+from time import timezone, strftime
+from re import compile as re_compile
+from socket import gethostname
 
 default_name ='root'
 default_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -88,9 +88,9 @@ class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler)
         """
 
         with open(old_log, encoding="utf8") as log:
-            with gzip.open(old_log + '.gz', 'wt', encoding='utf8') as compressed_log:
+            with open_gzip(old_log + '.gz', 'wt', encoding='utf8') as compressed_log:
                 compressed_log.writelines(log)
-        os.remove(old_log)
+        os_remove(old_log)
 
     def doRollover(self):
         """
@@ -104,15 +104,15 @@ class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler)
             for i in range(self.backup_count - 1, 0, -1):
                 sfn = f"{self.baseFilename}.{i}.gz"
                 dfn = f"{self.baseFilename}.{i + 1}.gz"
-                if os.path.exists(sfn):
-                    if os.path.exists(dfn):
-                        os.remove(dfn)
-                    os.rename(sfn, dfn)
+                if os_path.exists(sfn):
+                    if os_path.exists(dfn):
+                        os_remove(dfn)
+                    os_rename(sfn, dfn)
         dfn = self.baseFilename + ".1"
-        if os.path.exists(dfn):
-            os.remove(dfn)
-        if os.path.exists(self.baseFilename):
-            os.rename(self.baseFilename, dfn)
+        if os_path.exists(dfn):
+            os_remove(dfn)
+        if os_path.exists(self.baseFilename):
+            os_rename(self.baseFilename, dfn)
             self.doArchive(dfn)
         if not self.delay:
             self.stream = self._open()
@@ -138,7 +138,7 @@ class __buffering_SMTP_handler(logging.handlers.BufferingHandler):
     def flush(self):
         if len(self.buffer) > 0:
             try:
-                smtp = smtplib.SMTP(self.mailhost, self.mailport)
+                smtp = SMTP(self.mailhost, self.mailport)
                 smtp.starttls()
                 smtp.login(self.username, self.password)
                 msg = f"From: {self.fromaddr}\r\nTo: {','.join(self.toaddrs)}\r\nSubject: {self.subject}\r\n\r\n"
@@ -160,8 +160,8 @@ class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler):
     RFC5424 is required because, even though Graylog supports RFC3164,
     the logs aren't displayed for some reason.
     """
-    tz_offset = re.compile(r'([+-]\d{2})(\d{2})$')
-    escaped = re.compile(r'([\]"\\])')
+    tz_offset = re_compile(r'([+-]\d{2})(\d{2})$')
+    escaped = re_compile(r'([\]"\\])')
 
     def __init__(self, *args, **kwargs):
         self.msgid = kwargs.pop('msgid', None)
@@ -170,10 +170,10 @@ class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler):
 
     def format(self, record):
         version = 1
-        asctime = datetime.datetime.fromtimestamp(record.created).isoformat()
-        m = self.tz_offset.match(time.strftime('%z'))
+        asctime = datetime.fromtimestamp(record.created).isoformat()
+        m = self.tz_offset.match(strftime('%z'))
         has_offset = False
-        if m and time.timezone:
+        if m and timezone:
             hrs, mins = m.groups()
             if int(hrs) or int(mins):
                 has_offset = True
@@ -182,7 +182,7 @@ class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler):
         else:
             asctime += f'{hrs}:{mins}'
         try:
-            hostname = socket.gethostname()
+            hostname = gethostname()
         except Exception:
             hostname = '-'
         appname = self.appname or '-'
@@ -249,13 +249,13 @@ def _configure_logger(name, handler, loglevel):
             logger = logging.getLogger()
         except Exception as e:
             print(e)
-            sys.exit("Error while creating new root logger")
+            sys_exit("Error while creating new root logger")
     else:
         try:
             logger = logging.getLogger(name)
         except Exception as e:
             print(e)
-            sys.exit(f"Error while creating {name} Logger")
+            sys_exit(f"Error while creating {name} Logger")
 
     logger.addHandler(handler)
     logger.setLevel(loglevel)
@@ -334,7 +334,7 @@ def create_file_logger(name="File",
 
     try:
         if log_file != '':
-            if not os.path.exists(log_file):
+            if not os_path.exists(log_file):
                 print("Logfile doesn't exist and will be created")
                 with open(log_file, 'w', encoding="utf8"):
                     pass
