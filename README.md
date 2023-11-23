@@ -1,11 +1,13 @@
 # Python logging module
 This python module `modules/log_setup.py` appends the default logging module with additional capabilities.
+Besides the module script all other used modules should be available in python3 by default.
 
 - Predefined logging format for debug and all other formats
 - Colorized logging output for command line
 - Buffered SMTP logging
 - Rotating File logging with zipping capability (requires gzip)
 - [RFC5424](https://datatracker.ietf.org/doc/rfc5424/) Syslog logging
+- Switch between local time and utc
 
 
 ## Usage
@@ -19,5 +21,12 @@ python3 usage_sample.py
 Creating multiple logger (e.g. file and console) with the same name (same variable and logger name) will result that both logger will be assigned.
 This way it is possible to do multiple logging formats at the same time.
 
-To test the `SMTP logger` fill out the variables in `credentials_sample.yml` and uncomment `smtp_test()` at the end.
+To test the `SMTP logger` create a file named `credentials.yml`, fill it out similar to `credentials_sample.yml` and uncomment `smtp_test()` at the end.
 To test the `Syslog logger` set the variable `syslog_address` and optionally `syslog_port` and uncomment `syslog_test()` at the end.
+
+## ToDo before first version release
+- Proper stating of min python version requirement
+- ci/cd
+    - automated Linting
+    - automated function checks
+- Default values shown in Docstring or something similar

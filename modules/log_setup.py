@@ -16,7 +16,7 @@ With more handler types, switching to file handler before switching to console o
 Handler Docs: https://docs.python.org/3/library/logging.handlers.html
 """
 
-__version__ = '1.1'
+__version__ = '0.2'
 
 from os import path as os_path, remove as os_remove, rename as os_rename
 from sys import exit as sys_exit
@@ -24,7 +24,7 @@ from gzip import open as open_gzip
 import logging.handlers
 from smtplib import SMTP
 from datetime import datetime
-from time import timezone, strftime
+from time import timezone, strftime, gmtime
 from re import compile as re_compile
 from socket import gethostname
 
@@ -34,6 +34,7 @@ default_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 debug_format = '%(asctime)s,%(msecs)03d - %(name)s - %(levelname)s - <PID %(process)d:%(processName)s> - %(module)s:%(funcName)s:%(lineno)d - %(message)s'
 # Dateformat is set, so that it will always be the same
 default_datefmt = '%Y-%m-%d %H:%M:%S'
+default_time_zone_style = 'local'
 default_loglevel = 'INFO'
 
 # Default Settings for File logging
@@ -64,7 +65,7 @@ default_info_color = '\x1b[38;20m'      # Grey
 default_warning_color = '\x1b[33;20m'   # Yellow
 default_error_color = '\x1b[31;20m'     # Red
 default_critical_color = '\x1b[31;1m'   # Bold Red
-default_color = '\x1b[0m'               # White
+default_default_color = '\x1b[0m'               # White
 
 class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler):
     """
@@ -220,21 +221,24 @@ class __Custom_formatter(logging.Formatter):
     Colored logging formatter
     """
 
-    def __init__(self, fmt, datefmt):
+    def __init__(self, fmt, datefmt, time_zone, debug_color, info_color, warning_color, error_color, critical_color, default_color):
         super().__init__()
         self.fmt = fmt
         self.datefmt = datefmt
+        self.time_zone = time_zone
         self.FORMATS = {
-            logging.DEBUG: default_debug_color + self.fmt + default_color,
-            logging.INFO: default_info_color + self.fmt + default_color,
-            logging.WARNING: default_warning_color + self.fmt + default_color,
-            logging.ERROR: default_error_color + self.fmt + default_color,
-            logging.CRITICAL: default_critical_color + self.fmt + default_color
+            logging.DEBUG: debug_color + self.fmt + default_color,
+            logging.INFO: info_color + self.fmt + default_color,
+            logging.WARNING: warning_color + self.fmt + default_color,
+            logging.ERROR: error_color + self.fmt + default_color,
+            logging.CRITICAL: critical_color + self.fmt + default_color
         }
 
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(fmt=log_fmt, datefmt=self.datefmt)
+        if self.time_zone == 'utc':
+            formatter.converter = gmtime
         return formatter.format(record)
 
 def _configure_logger(name, handler, loglevel):
@@ -261,6 +265,23 @@ def _configure_logger(name, handler, loglevel):
     logger.setLevel(loglevel)
 
     return logger
+
+def _set_timezone_style(time_zone_style):
+    """
+    Sets the timezone style for the logger
+    """
+
+    try:
+        if str(time_zone_style).lower() == 'utc':
+            timezone = 'utc'
+        else:
+            timezone = 'local'
+    except Exception as e:
+        print(e)
+        print(f"Couldn't parse inputted timezone style, using default {default_time_zone_style}")
+        timezone = default_time_zone_style
+
+    return timezone
 
 def _set_format(loglevel):
     """
@@ -300,17 +321,30 @@ def _check_loglevel(loglevel):
 
     return loglevel
 
-def create_console_logger(name=default_name, loglevel=default_loglevel):
+def create_console_logger(name=default_name, loglevel=default_loglevel, time_zone_style=default_time_zone_style,
+                                                                        debug_output_color=default_debug_color,
+                                                                        info_output_color=default_info_color,
+                                                                        warning_output_color=default_warning_color,
+                                                                        error_output_color=default_error_color,
+                                                                        critical_output_color=default_critical_color,
+                                                                        default_output_color=default_default_color):
     """
     Creates a new logger with console output with the given name and loglevel.
     """
 
     loglevel = _check_loglevel(loglevel)
     log_format = _set_format(loglevel)
+    time_zone_style = _set_timezone_style(time_zone_style)
 
     handler = logging.StreamHandler()
 
-    handler.setFormatter(__Custom_formatter(fmt=log_format, datefmt=default_datefmt))
+    handler.setFormatter(__Custom_formatter(fmt=log_format, datefmt=default_datefmt, time_zone=time_zone_style,
+                                                                                        debug_color=debug_output_color,
+                                                                                        info_color=info_output_color,
+                                                                                        warning_color=warning_output_color,
+                                                                                        error_color=error_output_color,
+                                                                                        critical_color=critical_output_color,
+                                                                                        default_color=default_output_color))
 
     logger = _configure_logger(name, handler, loglevel)
 
@@ -319,6 +353,7 @@ def create_console_logger(name=default_name, loglevel=default_loglevel):
 def create_file_logger(name="File",
                         log_file=default_log_file,
                         loglevel=default_loglevel,
+                        time_zone_style=default_time_zone_style,
                         maxBytes=default_maxsize,
                         backupCount=default_backup_count):
     """
@@ -331,6 +366,7 @@ def create_file_logger(name="File",
 
     loglevel = _check_loglevel(loglevel)
     log_format = _set_format(loglevel)
+    time_zone_style = _set_timezone_style(time_zone_style)
 
     try:
         if log_file != '':
@@ -350,7 +386,10 @@ def create_file_logger(name="File",
         handler = logging.StreamHandler()
 
     
-    handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=default_datefmt))
+    formatter = logging.Formatter(fmt=log_format, datefmt=default_datefmt)
+    if time_zone_style == 'utc':
+        formatter.converter = gmtime
+    handler.setFormatter(formatter)
 
     logger = _configure_logger(name, handler, loglevel)
 
@@ -358,6 +397,7 @@ def create_file_logger(name="File",
 
 def create_smtp_logger(name='SMTP',
                         loglevel=default_loglevel,
+                        time_zone_style=default_time_zone_style,
                         mailhost=default_mail_server,
                         port=default_smtp_port,
                         username=default_smtp_user,
@@ -402,8 +442,11 @@ def create_smtp_logger(name='SMTP',
 
     loglevel = _check_loglevel(loglevel)
     log_format = _set_format(loglevel)
+    time_zone_style = _set_timezone_style(time_zone_style)
 
     log_format = logging.Formatter(fmt=log_format, datefmt=default_datefmt)
+    if time_zone_style == 'utc':
+        log_format.converter = gmtime
 
     try:
         handler = __buffering_SMTP_handler(mailhost, port, username, password, fromaddr, toaddrs, subject, capacity, log_format)
@@ -418,6 +461,7 @@ def create_smtp_logger(name='SMTP',
 
 def create_syslog_logger(name="SysLog",
                         loglevel=default_loglevel,
+                        time_zone_style=default_time_zone_style,
                         syslog_address=default_syslog_address,
                         syslog_port=default_syslog_port):
     """
@@ -427,6 +471,7 @@ def create_syslog_logger(name="SysLog",
 
     loglevel = _check_loglevel(loglevel)
     log_format = _set_format(loglevel)
+    time_zone_style = _set_timezone_style(time_zone_style)
 
     try:
         handler = __SysLog_handler_rfc5424(address=(syslog_address, syslog_port))
@@ -435,7 +480,10 @@ def create_syslog_logger(name="SysLog",
         print("SysLog Address or Port are wrong or unavailable, changing to StreamHandler")
         handler = logging.StreamHandler()
 
-    handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=default_datefmt))
+    formatter = logging.Formatter(fmt=log_format, datefmt=default_datefmt)
+    if time_zone_style == 'utc':
+        formatter.converter = gmtime
+    handler.setFormatter(formatter)
 
     logger = _configure_logger(name, handler, loglevel)
 

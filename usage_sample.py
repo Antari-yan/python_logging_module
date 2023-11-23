@@ -7,7 +7,6 @@ from yaml import safe_load
 import modules.log_setup
 
 file_logging_file = path.join(path.dirname(path.realpath(__file__)), 'logs/logfile.log')
-#smtp_credentials_file = path.join(path.dirname(path.realpath(__file__)), 'credentials_sample.yml')
 smtp_credentials_file = path.join(path.dirname(path.realpath(__file__)), 'credentials.yml')
 syslog_address = ""
 syslog_port = 1514
@@ -22,6 +21,7 @@ arg_group_loglevel.add_argument("-info", "-INFO", action="store_true", help="Set
 arg_group_loglevel.add_argument("-warning", "-WARNING", "-warn", "-WARN", action="store_true", help="Sets the Loglevel to WARNING")
 arg_group_loglevel.add_argument("-error", "-ERROR", action="store_true", help="Sets the Loglevel to ERROR")
 arg_group_loglevel.add_argument("-critical", "-CRITICAL", "-crit", "-CRIT", action="store_true", help="Sets the Loglevel to CRITICAL")
+arg_group_loglevel.add_argument("-utc", "-UTC", action="store_true", help="Sets the used Timezone to UTC")
 args = parser.parse_args()
 
 if args.debug:
@@ -37,6 +37,10 @@ elif args.critical:
 else:
     log_level = default_log_level
 
+if args.utc:
+    time_zone_style = "utc"
+else:
+    time_zone_style = "local"
 
 def console_test():
     """
@@ -54,7 +58,7 @@ def console_test():
     print()
 
     # Console output with specific log level
-    console_logger_2 = modules.log_setup.create_console_logger(name = 'console_logger_2', loglevel=log_level)
+    console_logger_2 = modules.log_setup.create_console_logger(name = 'console_logger_2', loglevel=log_level, time_zone_style=time_zone_style)
 
     console_logger_2.debug('debug message')
     console_logger_2.info('info message')
@@ -65,7 +69,7 @@ def console_test():
     print()
 
     # Console output with specific log level
-    console_logger_3 = modules.log_setup.create_console_logger(name = 'console_logger_3', loglevel='DEBUG')
+    console_logger_3 = modules.log_setup.create_console_logger(name = 'console_logger_3', loglevel='DEBUG', time_zone_style=time_zone_style)
 
     console_logger_3.debug('debug message')
     console_logger_3.info('info message')
@@ -80,7 +84,7 @@ def file_test():
     This is a sample if you want to test the file logging functionality.
     """
 
-    file_logger = modules.log_setup.create_file_logger(name = 'file_logger', loglevel=log_level, log_file=file_logging_file)
+    file_logger = modules.log_setup.create_file_logger(name = 'file_logger', loglevel=log_level, log_file=file_logging_file, time_zone_style=time_zone_style)
 
     print (f"Logging to {file_logging_file}")
     file_logger.debug('debug message')
@@ -97,7 +101,7 @@ def console_and_file_test():
     """
 
     console_and_file_logger = modules.log_setup.create_console_logger(name = 'console_logger')
-    console_and_file_logger = modules.log_setup.create_file_logger(name = 'console_logger', loglevel=log_level, log_file=file_logging_file)
+    console_and_file_logger = modules.log_setup.create_file_logger(name = 'console_logger', loglevel=log_level, log_file=file_logging_file, time_zone_style=time_zone_style)
 
     console_and_file_logger.debug('debug message')
     console_and_file_logger.info('info message')
@@ -122,7 +126,8 @@ def smtp_test():
                                                                         password=smtp_logger_data['smtp_password'],
                                                                         fromaddr=smtp_logger_data['smtp_fromaddr'],
                                                                         toaddrs=smtp_logger_data['smtp_toaddrs'],
-                                                                        subject='test')
+                                                                        subject='test',
+                                                                        time_zone_style=time_zone_style)
 
     smtp_logger.info('test message')
     smtp_handler.flush()
@@ -135,9 +140,9 @@ def syslog_test():
     This is a sample if you want to test the SysLog logging functionality.
     """
 
-    sys_logger = modules.log_setup.create_syslog_logger(syslog_address=syslog_address, syslog_port=syslog_port)
+    sys_logger = modules.log_setup.create_syslog_logger(syslog_address=syslog_address, syslog_port=syslog_port, time_zone_style=time_zone_style)
 
-    sd = {'foo@12345': {'bar': 'baz', 'baz': 'bozz'},'foo@54321': {'rab': 'baz', 'zab': 'bozz'}}
+    sd = {'user1@host1': {'key1': 'value1', 'key2': 'value2'},'some@thing': {'key3': 'value3', 'key4': 'value4'}}
     extra = {'structured_data': sd}
 
     sys_logger.error('Message', extra=extra)
@@ -146,7 +151,7 @@ def syslog_test():
 
 file_test()
 console_test()
-console_and_file_test()
+#console_and_file_test()
 #smtp_test()
 #syslog_test()
 

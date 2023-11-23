@@ -1,5 +1,6 @@
 logs/*
 modules/*
 !modules/log_setup.py
+credentials.yml
 
 !**/.gitkeep
