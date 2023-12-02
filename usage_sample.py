@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 
+"""
+This is a collection of examples on how the logging module can be used.
+"""
+
 from os import path
 from sys import stdin # Only for check if running in terminal
 from argparse import ArgumentParser
 from yaml import safe_load
 import modules.log_setup
 
-file_logging_file = path.join(path.dirname(path.realpath(__file__)), 'logs/logfile.log')
-smtp_credentials_file = path.join(path.dirname(path.realpath(__file__)), 'credentials.yml')
-syslog_address = ""
-syslog_port = 1514
+FILE_LOGGING_FILE = path.join(path.dirname(path.realpath(__file__)), 'logs/logfile.log')
+SMTP_CREDENTIALS_FILE = path.join(path.dirname(path.realpath(__file__)), 'credentials.yml')
+SYSLOG_ADDRESS = ""
+SYSLOG_PORT = 1514
 
 
 # Create Argument parser
-default_log_level = "info"
+DEFAULT_LOG_LEVEL = "info"
 parser = ArgumentParser(description="")
 arg_group_loglevel = parser.add_mutually_exclusive_group()
-arg_group_loglevel.add_argument("-debug", "-DEBUG", action="store_true", help="Sets the Loglevel to DEBUG")
+arg_group_loglevel.add_argument("-debug", "-DEBUG",action="store_true", help="Sets the Loglevel to DEBUG")
 arg_group_loglevel.add_argument("-info", "-INFO", action="store_true", help="Sets the Loglevel to INFO")
 arg_group_loglevel.add_argument("-warning", "-WARNING", "-warn", "-WARN", action="store_true", help="Sets the Loglevel to WARNING")
 arg_group_loglevel.add_argument("-error", "-ERROR", action="store_true", help="Sets the Loglevel to ERROR")
@@ -25,22 +29,22 @@ arg_group_loglevel.add_argument("-utc", "-UTC", action="store_true", help="Sets 
 args = parser.parse_args()
 
 if args.debug:
-    log_level = "DEBUG"
+    LOG_LEVEL = "DEBUG"
 elif args.info:
-    log_level = "INFO"
+    LOG_LEVEL = "INFO"
 elif args.warning:
-    log_level = "WARNING"
+    LOG_LEVEL = "WARNING"
 elif args.error:
-    log_level = "ERROR"
+    LOG_LEVEL = "ERROR"
 elif args.critical:
-    log_level = "CRITICAL"
+    LOG_LEVEL = "CRITICAL"
 else:
-    log_level = default_log_level
+    LOG_LEVEL = DEFAULT_LOG_LEVEL
 
 if args.utc:
-    time_zone_style = "utc"
+    TIME_ZONE_STYLE = "utc"
 else:
-    time_zone_style = "local"
+    TIME_ZONE_STYLE = "local"
 
 def console_test():
     """
@@ -58,7 +62,9 @@ def console_test():
     print()
 
     # Console output with specific log level
-    console_logger_2 = modules.log_setup.create_console_logger(name = 'console_logger_2', loglevel=log_level, time_zone_style=time_zone_style)
+    console_logger_2 = modules.log_setup.create_console_logger(name = 'console_logger_2',
+                                                               loglevel=LOG_LEVEL,
+                                                               time_zone_style=TIME_ZONE_STYLE)
 
     console_logger_2.debug('debug message')
     console_logger_2.info('info message')
@@ -69,7 +75,9 @@ def console_test():
     print()
 
     # Console output with specific log level
-    console_logger_3 = modules.log_setup.create_console_logger(name = 'console_logger_3', loglevel='DEBUG', time_zone_style=time_zone_style)
+    console_logger_3 = modules.log_setup.create_console_logger(name = 'console_logger_3',
+                                                               loglevel='DEBUG',
+                                                               time_zone_style=TIME_ZONE_STYLE)
 
     console_logger_3.debug('debug message')
     console_logger_3.info('info message')
@@ -77,23 +85,22 @@ def console_test():
     console_logger_3.error('error message')
     console_logger_3.critical('critical message')
 
-    return None
-
 def file_test():
     """
     This is a sample if you want to test the file logging functionality.
     """
 
-    file_logger = modules.log_setup.create_file_logger(name = 'file_logger', loglevel=log_level, log_file=file_logging_file, time_zone_style=time_zone_style)
+    file_logger = modules.log_setup.create_file_logger(name = 'file_logger',
+                                                       loglevel=LOG_LEVEL,
+                                                       log_file=FILE_LOGGING_FILE,
+                                                       time_zone_style=TIME_ZONE_STYLE)
 
-    print (f"Logging to {file_logging_file}")
+    print (f"Logging to {FILE_LOGGING_FILE}")
     file_logger.debug('debug message')
     file_logger.info('info message')
     file_logger.warning('warn message')
     file_logger.error('error message')
     file_logger.critical('critical message')
-
-    return None
 
 def console_and_file_test():
     """
@@ -101,7 +108,10 @@ def console_and_file_test():
     """
 
     console_and_file_logger = modules.log_setup.create_console_logger(name = 'console_logger')
-    console_and_file_logger = modules.log_setup.create_file_logger(name = 'console_logger', loglevel=log_level, log_file=file_logging_file, time_zone_style=time_zone_style)
+    console_and_file_logger = modules.log_setup.create_file_logger(name = 'console_logger',
+                                                                   loglevel=LOG_LEVEL,
+                                                                   log_file=FILE_LOGGING_FILE,
+                                                                   time_zone_style=TIME_ZONE_STYLE)
 
     console_and_file_logger.debug('debug message')
     console_and_file_logger.info('info message')
@@ -109,55 +119,50 @@ def console_and_file_test():
     console_and_file_logger.error('error message')
     console_and_file_logger.critical('critical message')
 
-    return None
-
 def smtp_test():
     """
     This is a sample if you want to test the SMTP logging functionality.
     """
 
-    creds_file = path.join(path.dirname(path.realpath(__file__)), smtp_credentials_file)
-    with open(creds_file, 'r') as file:
+    creds_file = path.join(path.dirname(path.realpath(__file__)), SMTP_CREDENTIALS_FILE)
+    with open(creds_file, 'r', encoding='utf-8') as file:
         smtp_logger_data = safe_load(file)
 
     smtp_logger, smtp_handler = modules.log_setup.create_smtp_logger(mailhost=smtp_logger_data['smtp_mailhost'],
-                                                                        port=smtp_logger_data['smtp_port'],
-                                                                        username=smtp_logger_data['smtp_username'],
-                                                                        password=smtp_logger_data['smtp_password'],
-                                                                        fromaddr=smtp_logger_data['smtp_fromaddr'],
-                                                                        toaddrs=smtp_logger_data['smtp_toaddrs'],
-                                                                        subject='test',
-                                                                        time_zone_style=time_zone_style)
+                                                                     port=smtp_logger_data['smtp_port'],
+                                                                     username=smtp_logger_data['smtp_username'],
+                                                                     password=smtp_logger_data['smtp_password'],
+                                                                     fromaddr=smtp_logger_data['smtp_fromaddr'],
+                                                                     toaddrs=smtp_logger_data['smtp_toaddrs'],
+                                                                     subject='test',
+                                                                     time_zone_style=TIME_ZONE_STYLE)
 
     smtp_logger.info('test message')
     smtp_handler.flush()
     smtp_handler.close()
-
-    return None
 
 def syslog_test():
     """
     This is a sample if you want to test the SysLog logging functionality.
     """
 
-    sys_logger = modules.log_setup.create_syslog_logger(syslog_address=syslog_address, syslog_port=syslog_port, time_zone_style=time_zone_style)
+    sys_logger = modules.log_setup.create_syslog_logger(syslog_address=SYSLOG_ADDRESS,
+                                                        syslog_port=SYSLOG_PORT,
+                                                        time_zone_style=TIME_ZONE_STYLE)
 
-    sd = {'user1@host1': {'key1': 'value1', 'key2': 'value2'},'some@thing': {'key3': 'value3', 'key4': 'value4'}}
+    sd = {'user1@host1': {'key1': 'value1', 'key2': 'value2'},
+          'some@thing': {'key3': 'value3', 'key4': 'value4'}}
     extra = {'structured_data': sd}
 
     sys_logger.error('Message', extra=extra)
 
-    return None
-
 file_test()
-console_test()
+if stdin and stdin.isatty():
+    console_test()
 #console_and_file_test()
 #smtp_test()
 #syslog_test()
 
-
-#if sys.stdin and sys.stdin.isatty():
-#    console_test()
-
+# Create a 10MB file
 #dd if=/dev/zero bs=10M count=1  | tr '\0' '0' > logs/logfile.log
 #ls -alh logs/

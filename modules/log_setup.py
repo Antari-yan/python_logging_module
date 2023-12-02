@@ -16,7 +16,7 @@ With more handler types, switching to file handler before switching to console o
 Handler Docs: https://docs.python.org/3/library/logging.handlers.html
 """
 
-__version__ = '0.2'
+__version__ = '0.3.0'
 
 from os import path as os_path, remove as os_remove, rename as os_rename
 from sys import exit as sys_exit
@@ -28,44 +28,44 @@ from time import timezone, strftime, gmtime
 from re import compile as re_compile
 from socket import gethostname
 
-default_name ='root'
-default_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+DEFAULT_NAME ='root'
+DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 # To give more in-depth information, the debug loglevel returns more information
-debug_format = '%(asctime)s,%(msecs)03d - %(name)s - %(levelname)s - <PID %(process)d:%(processName)s> - %(module)s:%(funcName)s:%(lineno)d - %(message)s'
+DEBUG_FORMAT = '%(asctime)s,%(msecs)03d - %(name)s - %(levelname)s - <PID %(process)d:%(processName)s> - %(module)s:%(funcName)s:%(lineno)d - %(message)s'
 # Dateformat is set, so that it will always be the same
-default_datefmt = '%Y-%m-%d %H:%M:%S'
-default_time_zone_style = 'local'
-default_loglevel = 'INFO'
+DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S'
+DEFAULT_TIME_ZONE_STYLE = 'local'
+DEFAULT_LOGLEVEL = 'INFO'
 
 # Default Settings for File logging
-default_log_file = ''
-default_encoding = 'utf-8'
-default_maxsize = 10485760  # 10MB
+DEFAULT_LOG_FILE = ''
+DEFAULT_FILE_ENCODING = 'utf-8'
+DEFAULT_MAX_FILE_SIZE = 10485760  # 10MB
 # When a log file is >10MB a new one will be created,
 # but there will never be more than 10 Log files total
-default_backup_count = 10
+DEFAULT_FILE_BACKUP_COUNT = 5
 
 # Default Settings for SMTP logging
-default_mail_server = ''
-default_smtp_port = 587
-default_smtp_user = ''
-default_smtp_password = ''
-default_sender = ''
-default_recipient = ''
-default_subject = ''
-default_capacity = 100
+DEFAULT_MAIL_SERVER = ''
+DEFAULT_SMTP_PORT = 587
+DEFAULT_SMTP_USER = ''
+DEFAULT_SMTP_PASSWORD = ''
+DEFAULT_SMTP_SENDER = ''
+DEFAULT_SMTP_RECIPIENT = ''
+DEFAULT_SMTP_SUBJECT = ''
+DEFAULT_SMTP_CAPACITY = 100
 
 # Default Settings for SysLog logging
-default_syslog_address = ''
-default_syslog_port = 1514
+DEFAULT_SYSLOG_ADDRESS = ''
+DEFAULT_SYSLOG_PORT = 1514
 
 # Default coloring
-default_debug_color = '\x1b[34;20m'     # Blue
-default_info_color = '\x1b[38;20m'      # Grey
-default_warning_color = '\x1b[33;20m'   # Yellow
-default_error_color = '\x1b[31;20m'     # Red
-default_critical_color = '\x1b[31;1m'   # Bold Red
-default_default_color = '\x1b[0m'               # White
+DEFAULT_DEBUG_COLOR = '\x1b[34;20m'     # Blue
+DEFAULT_INFO_COLOR = '\x1b[38;20m'      # Grey
+DEFAULT_WARNING_COLOR = '\x1b[33;20m'   # Yellow
+DEFAULT_ERROR_COLOR = '\x1b[31;20m'     # Red
+DEFAULT_CRITICAL_COLOR = '\x1b[31;1m'   # Bold Red
+DEFAULT_DEFAULT_COLOR = '\x1b[0m'               # White
 
 class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler):
     """
@@ -81,6 +81,8 @@ class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler)
 
         backupCount = kws.get('backupCount', 0)
         self.backup_count = backupCount
+        encoding = kws.get('encoding', DEFAULT_FILE_ENCODING)
+        self.encoding = encoding
         logging.handlers.RotatingFileHandler.__init__(self, filename, **kws)
 
     def doArchive(self, old_log):
@@ -88,8 +90,8 @@ class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler)
         Write the old log file into a zip file and delete the log file
         """
 
-        with open(old_log, encoding="utf8") as log:
-            with open_gzip(old_log + '.gz', 'wt', encoding='utf8') as compressed_log:
+        with open(old_log, encoding=self.encoding) as log:
+            with open_gzip(old_log + '.gz', 'wt', encoding=self.encoding) as compressed_log:
                 compressed_log.writelines(log)
         os_remove(old_log)
 
@@ -123,7 +125,8 @@ class __buffering_SMTP_handler(logging.handlers.BufferingHandler):
     Essentially this is a BufferingHandler extended with SMTP capabilities
     All Logs will be buffered und when flush() is used the Mail will be send
     """
-    def __init__(self, mailhost, port, username, password, fromaddr, toaddrs, subject, capacity, log_format):
+    def __init__(self, mailhost, port, username, password,
+                 fromaddr, toaddrs, subject, capacity, log_format):
         logging.handlers.BufferingHandler.__init__(self, capacity)
         self.mailhost = mailhost
         self.mailport = port
@@ -221,7 +224,8 @@ class __Custom_formatter(logging.Formatter):
     Colored logging formatter
     """
 
-    def __init__(self, fmt, datefmt, time_zone, debug_color, info_color, warning_color, error_color, critical_color, default_color):
+    def __init__(self, fmt, datefmt, time_zone, debug_color,
+                 info_color, warning_color, error_color, critical_color, default_color):
         super().__init__()
         self.fmt = fmt
         self.datefmt = datefmt
@@ -273,15 +277,15 @@ def _set_timezone_style(time_zone_style):
 
     try:
         if str(time_zone_style).lower() == 'utc':
-            timezone = 'utc'
+            set_timezone = 'utc'
         else:
-            timezone = 'local'
+            set_timezone = 'local'
     except Exception as e:
         print(e)
-        print(f"Couldn't parse inputted timezone style, using default {default_time_zone_style}")
-        timezone = default_time_zone_style
+        print(f"Couldn't parse inputted timezone style, using default {DEFAULT_TIME_ZONE_STYLE}")
+        set_timezone = DEFAULT_TIME_ZONE_STYLE
 
-    return timezone
+    return set_timezone
 
 def _set_format(loglevel):
     """
@@ -289,9 +293,9 @@ def _set_format(loglevel):
     """
 
     if loglevel == 'DEBUG':
-        log_format = debug_format
+        log_format = DEBUG_FORMAT
     else:
-        log_format = default_format
+        log_format = DEFAULT_FORMAT
 
     return log_format
 
@@ -316,18 +320,19 @@ def _check_loglevel(loglevel):
             raise Exception
     except Exception as e:
         print(e)
-        print(f"Couldn't parse inputted loglevel, using default {default_loglevel}")
-        loglevel = default_loglevel
+        print(f"Couldn't parse inputted loglevel, using default {DEFAULT_LOGLEVEL}")
+        loglevel = DEFAULT_LOGLEVEL
 
     return loglevel
 
-def create_console_logger(name=default_name, loglevel=default_loglevel, time_zone_style=default_time_zone_style,
-                                                                        debug_output_color=default_debug_color,
-                                                                        info_output_color=default_info_color,
-                                                                        warning_output_color=default_warning_color,
-                                                                        error_output_color=default_error_color,
-                                                                        critical_output_color=default_critical_color,
-                                                                        default_output_color=default_default_color):
+def create_console_logger(name=DEFAULT_NAME,
+                          loglevel=DEFAULT_LOGLEVEL,time_zone_style=DEFAULT_TIME_ZONE_STYLE,
+                          debug_output_color=DEFAULT_DEBUG_COLOR,
+                          info_output_color=DEFAULT_INFO_COLOR,
+                          warning_output_color=DEFAULT_WARNING_COLOR,
+                          error_output_color=DEFAULT_ERROR_COLOR,
+                          critical_output_color=DEFAULT_CRITICAL_COLOR,
+                          default_output_color=DEFAULT_DEFAULT_COLOR):
     """
     Creates a new logger with console output with the given name and loglevel.
     """
@@ -338,24 +343,27 @@ def create_console_logger(name=default_name, loglevel=default_loglevel, time_zon
 
     handler = logging.StreamHandler()
 
-    handler.setFormatter(__Custom_formatter(fmt=log_format, datefmt=default_datefmt, time_zone=time_zone_style,
-                                                                                        debug_color=debug_output_color,
-                                                                                        info_color=info_output_color,
-                                                                                        warning_color=warning_output_color,
-                                                                                        error_color=error_output_color,
-                                                                                        critical_color=critical_output_color,
-                                                                                        default_color=default_output_color))
+    handler.setFormatter(__Custom_formatter(fmt=log_format,
+                                            datefmt=DEFAULT_DATEFMT,
+                                            time_zone=time_zone_style,
+                                            debug_color=debug_output_color,
+                                            info_color=info_output_color,
+                                            warning_color=warning_output_color,
+                                            error_color=error_output_color,
+                                            critical_color=critical_output_color,
+                                            default_color=default_output_color))
 
     logger = _configure_logger(name, handler, loglevel)
 
     return logger
 
 def create_file_logger(name="File",
-                        log_file=default_log_file,
-                        loglevel=default_loglevel,
-                        time_zone_style=default_time_zone_style,
-                        maxBytes=default_maxsize,
-                        backupCount=default_backup_count):
+                        log_file=DEFAULT_LOG_FILE,
+                        loglevel=DEFAULT_LOGLEVEL,
+                        time_zone_style=DEFAULT_TIME_ZONE_STYLE,
+                        maxBytes=DEFAULT_MAX_FILE_SIZE,
+                        backupCount=DEFAULT_FILE_BACKUP_COUNT,
+                        encoding=DEFAULT_FILE_ENCODING):
     """
     Creates a new Rotating File Logger extended with the capability to zip old logs,
     at the given log file location with the given name and loglevel.
@@ -372,10 +380,10 @@ def create_file_logger(name="File",
         if log_file != '':
             if not os_path.exists(log_file):
                 print("Logfile doesn't exist and will be created")
-                with open(log_file, 'w', encoding="utf8"):
+                with open(log_file, 'w', encoding=encoding):
                     pass
             handler = __rotating_file_handler_with_zipping(filename=log_file,
-                                                            encoding=default_encoding,
+                                                            encoding=DEFAULT_FILE_ENCODING,
                                                             maxBytes=maxBytes,
                                                             backupCount=backupCount)
         else:
@@ -385,8 +393,8 @@ def create_file_logger(name="File",
         print("Logfile couldn't be created or given path is empty, changing to StreamHandler")
         handler = logging.StreamHandler()
 
-    
-    formatter = logging.Formatter(fmt=log_format, datefmt=default_datefmt)
+
+    formatter = logging.Formatter(fmt=log_format, datefmt=DEFAULT_DATEFMT)
     if time_zone_style == 'utc':
         formatter.converter = gmtime
     handler.setFormatter(formatter)
@@ -396,16 +404,16 @@ def create_file_logger(name="File",
     return logger
 
 def create_smtp_logger(name='SMTP',
-                        loglevel=default_loglevel,
-                        time_zone_style=default_time_zone_style,
-                        mailhost=default_mail_server,
-                        port=default_smtp_port,
-                        username=default_smtp_user,
-                        password=default_smtp_user,
-                        fromaddr=default_sender,
-                        toaddrs=default_recipient,
-                        subject=default_subject,
-                        capacity=default_capacity):
+                        loglevel=DEFAULT_LOGLEVEL,
+                        time_zone_style=DEFAULT_TIME_ZONE_STYLE,
+                        mailhost=DEFAULT_MAIL_SERVER,
+                        port=DEFAULT_SMTP_PORT,
+                        username=DEFAULT_SMTP_USER,
+                        password=DEFAULT_SMTP_PASSWORD,
+                        fromaddr=DEFAULT_SMTP_SENDER,
+                        toaddrs=DEFAULT_SMTP_RECIPIENT,
+                        subject=DEFAULT_SMTP_SUBJECT,
+                        capacity=DEFAULT_SMTP_CAPACITY):
     """
     Creates a new logger that sends the complete log via SMTP
     important: returns Logger AND Handler
@@ -444,12 +452,13 @@ def create_smtp_logger(name='SMTP',
     log_format = _set_format(loglevel)
     time_zone_style = _set_timezone_style(time_zone_style)
 
-    log_format = logging.Formatter(fmt=log_format, datefmt=default_datefmt)
+    log_format = logging.Formatter(fmt=log_format, datefmt=DEFAULT_DATEFMT)
     if time_zone_style == 'utc':
         log_format.converter = gmtime
 
     try:
-        handler = __buffering_SMTP_handler(mailhost, port, username, password, fromaddr, toaddrs, subject, capacity, log_format)
+        handler = __buffering_SMTP_handler(mailhost, port, username, password, fromaddr,
+                                           toaddrs, subject, capacity, log_format)
     except Exception as e:
         print(e)
         print("SMTP Logger couldn't be created, changing to StreamHandler")
@@ -460,10 +469,10 @@ def create_smtp_logger(name='SMTP',
     return logger, handler
 
 def create_syslog_logger(name="SysLog",
-                        loglevel=default_loglevel,
-                        time_zone_style=default_time_zone_style,
-                        syslog_address=default_syslog_address,
-                        syslog_port=default_syslog_port):
+                        loglevel=DEFAULT_LOGLEVEL,
+                        time_zone_style=DEFAULT_TIME_ZONE_STYLE,
+                        syslog_address=DEFAULT_SYSLOG_ADDRESS,
+                        syslog_port=DEFAULT_SYSLOG_PORT):
     """
     Creates a new RFC5424 Syslog Logger for centralized logging
     Requires the target IP and Port to send the logs to.
@@ -480,7 +489,7 @@ def create_syslog_logger(name="SysLog",
         print("SysLog Address or Port are wrong or unavailable, changing to StreamHandler")
         handler = logging.StreamHandler()
 
-    formatter = logging.Formatter(fmt=log_format, datefmt=default_datefmt)
+    formatter = logging.Formatter(fmt=log_format, datefmt=DEFAULT_DATEFMT)
     if time_zone_style == 'utc':
         formatter.converter = gmtime
     handler.setFormatter(formatter)
