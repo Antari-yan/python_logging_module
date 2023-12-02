@@ -5,8 +5,11 @@ Besides the module script all other used modules should be available in python3 
 - Predefined logging format for debug and all other formats
 - Colorized logging output for command line
 - Buffered SMTP logging
+    - Sends one e-mail that contains all logging massages
 - Rotating File logging with zipping capability (requires gzip)
+    - Rotates after a set file size (default 10MB) and zips the old log files
 - [RFC5424](https://datatracker.ietf.org/doc/rfc5424/) Syslog logging
+    - Makes Syslog logging fully compatible with RFC5424 
 - Switch between local time and utc
 
 
