@@ -12,6 +12,11 @@ Besides the module script all other used modules should be available in python3 
     - Makes Syslog logging fully compatible with RFC5424 
 - Switch between local time and utc
 
+## Setup
+To run `usage_sample.py` the `yaml` packages is required
+``` sh
+pip install -r requirements.txt
+```
 
 ## Usage
 To give a proper overview in how the module can be used, `usage_sample.py` contains examples for each logging handlers available.  
