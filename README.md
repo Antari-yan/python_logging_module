@@ -1,5 +1,5 @@
-# Python logging module
-This python module `modules/log_setup.py` appends the default logging module with additional capabilities.
+# Python logging module extension
+This python module `modules/log_setup.py` extends the default logging module with additional capabilities.
 Besides the module script all other used modules should be available in python3 by default.
 
 - Predefined logging format for debug and all other formats
