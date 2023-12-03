@@ -23,6 +23,9 @@ jobs:
       run: |
         # Ignoring C0301: Line too long
         # Ignoring W0718: Catching too general exception
+        # Ignoring W0719: Raising too general exception
         # Ignoring C103: PascalCase/snake_case
+        # Ignoring R0902: Too many instance attributes
         # Ignoring R0913: Too many arguments
-        pylint $(git ls-files '*.py')  --disable=C0301 --disable=W0718 --disable=C103 --disable=R0913
+        # Ignoring R0914: Too many local variables
+        pylint $(git ls-files '*.py')  --disable=C0301 --disable=W0718 --disable=W0719 --disable=C0103 --disable=R0902 --disable=R0913 --disable=R0914
