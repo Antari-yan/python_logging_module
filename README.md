@@ -13,7 +13,7 @@ Besides the module script all other used modules should be available in python3 
 - Switch between local time and utc
 
 ## Setup
-To run `usage_sample.py` the `yaml` packages is required
+To run `usage_sample.py` the `pyyaml` packages is required
 ``` sh
 pip install -r requirements.txt
 ```
