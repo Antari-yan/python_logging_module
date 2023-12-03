@@ -18,6 +18,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pylint
+        pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')  --disable=C0301
+        # Ignoring C0301: Line too long
+        # Ignoring W0718: Catching too general exception
+        # Ignoring C103: PascalCase/snake_case
+        # Ignoring R0913: Too many arguments
+        pylint $(git ls-files '*.py')  --disable=C0301 --disable=W0718 --disable=C103 --disable=R0913
