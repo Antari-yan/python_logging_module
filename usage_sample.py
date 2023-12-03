@@ -2,6 +2,9 @@
 
 """
 This is a collection of examples on how the logging module can be used.
+
+Pylint ignores:
+# Ignoring C0301: Line too long
 """
 
 from os import path
@@ -20,12 +23,12 @@ SYSLOG_PORT = 1514
 DEFAULT_LOG_LEVEL = "info"
 parser = ArgumentParser(description="")
 arg_group_loglevel = parser.add_mutually_exclusive_group()
-arg_group_loglevel.add_argument("-debug", "-DEBUG",action="store_true", help="Sets the Loglevel to DEBUG")
-arg_group_loglevel.add_argument("-info", "-INFO", action="store_true", help="Sets the Loglevel to INFO")
-arg_group_loglevel.add_argument("-warning", "-WARNING", "-warn", "-WARN", action="store_true", help="Sets the Loglevel to WARNING")
-arg_group_loglevel.add_argument("-error", "-ERROR", action="store_true", help="Sets the Loglevel to ERROR")
-arg_group_loglevel.add_argument("-critical", "-CRITICAL", "-crit", "-CRIT", action="store_true", help="Sets the Loglevel to CRITICAL")
-arg_group_loglevel.add_argument("-utc", "-UTC", action="store_true", help="Sets the used Timezone to UTC")
+arg_group_loglevel.add_argument("-debug", "-DEBUG",action="store_true", help="Sets the Loglevel to DEBUG")                              # pylint: disable=C0301
+arg_group_loglevel.add_argument("-info", "-INFO", action="store_true", help="Sets the Loglevel to INFO")                                # pylint: disable=C0301
+arg_group_loglevel.add_argument("-warning", "-WARNING", "-warn", "-WARN", action="store_true", help="Sets the Loglevel to WARNING")     # pylint: disable=C0301
+arg_group_loglevel.add_argument("-error", "-ERROR", action="store_true", help="Sets the Loglevel to ERROR")                             # pylint: disable=C0301
+arg_group_loglevel.add_argument("-critical", "-CRITICAL", "-crit", "-CRIT", action="store_true", help="Sets the Loglevel to CRITICAL")  # pylint: disable=C0301
+arg_group_loglevel.add_argument("-utc", "-UTC", action="store_true", help="Sets the used Timezone to UTC")                              # pylint: disable=C0301
 args = parser.parse_args()
 
 if args.debug:
@@ -128,14 +131,14 @@ def smtp_test():
     with open(creds_file, 'r', encoding='utf-8') as file:
         smtp_logger_data = safe_load(file)
 
-    smtp_logger, smtp_handler = modules.log_setup.create_smtp_logger(mailhost=smtp_logger_data['smtp_mailhost'],
-                                                                     port=smtp_logger_data['smtp_port'],
-                                                                     username=smtp_logger_data['smtp_username'],
-                                                                     password=smtp_logger_data['smtp_password'],
-                                                                     fromaddr=smtp_logger_data['smtp_fromaddr'],
-                                                                     toaddrs=smtp_logger_data['smtp_toaddrs'],
+    smtp_logger, smtp_handler = modules.log_setup.create_smtp_logger(mailhost=smtp_logger_data['smtp_mailhost'],    # pylint: disable=C0301
+                                                                     port=smtp_logger_data['smtp_port'],            # pylint: disable=C0301
+                                                                     username=smtp_logger_data['smtp_username'],    # pylint: disable=C0301
+                                                                     password=smtp_logger_data['smtp_password'],    # pylint: disable=C0301
+                                                                     fromaddr=smtp_logger_data['smtp_fromaddr'],    # pylint: disable=C0301
+                                                                     toaddrs=smtp_logger_data['smtp_toaddrs'],      # pylint: disable=C0301
                                                                      subject='test',
-                                                                     time_zone_style=TIME_ZONE_STYLE)
+                                                                     time_zone_style=TIME_ZONE_STYLE)               # pylint: disable=C0301
 
     smtp_logger.info('test message')
     smtp_handler.flush()

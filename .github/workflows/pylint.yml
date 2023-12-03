@@ -28,4 +28,5 @@ jobs:
         # Ignoring R0902: Too many instance attributes
         # Ignoring R0913: Too many arguments
         # Ignoring R0914: Too many local variables
-        pylint $(git ls-files '*.py')  --disable=C0301 --disable=W0718 --disable=W0719 --disable=C0103 --disable=R0902 --disable=R0913 --disable=R0914
+        # pylint $(git ls-files '*.py')  --disable=C0301 --disable=W0718 --disable=W0719 --disable=C0103 --disable=R0902 --disable=R0913 --disable=R0914
+        pylint $(git ls-files '*.py')

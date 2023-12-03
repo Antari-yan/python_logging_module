@@ -14,9 +14,18 @@ For usage:
 For the future:
 With more handler types, switching to file handler before switching to console output may be better.
 Handler Docs: https://docs.python.org/3/library/logging.handlers.html
+
+Pylint ignores:
+# Ignoring C0301: Line too long
+# Ignoring W0718: Catching too general exception
+# Ignoring W0719: Raising too general exception
+# Ignoring C103: PascalCase/snake_case
+# Ignoring R0902: Too many instance attributes
+# Ignoring R0913: Too many arguments
+# Ignoring R0914: Too many local variables
 """
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 from os import path as os_path, remove as os_remove, rename as os_rename
 from sys import exit as sys_exit
@@ -31,7 +40,7 @@ from socket import gethostname
 DEFAULT_NAME ='root'
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 # To give more in-depth information, the debug loglevel returns more information
-DEBUG_FORMAT = '%(asctime)s,%(msecs)03d - %(name)s - %(levelname)s - <PID %(process)d:%(processName)s> - %(module)s:%(funcName)s:%(lineno)d - %(message)s'
+DEBUG_FORMAT = '%(asctime)s,%(msecs)03d - %(name)s - %(levelname)s - <PID %(process)d:%(processName)s> - %(module)s:%(funcName)s:%(lineno)d - %(message)s'  # pylint: disable=C0301
 # Dateformat is set, so that it will always be the same
 DEFAULT_DATEFMT = '%Y-%m-%d %H:%M:%S'
 DEFAULT_TIME_ZONE_STYLE = 'local'
@@ -67,7 +76,7 @@ DEFAULT_ERROR_COLOR = '\x1b[31;20m'     # Red
 DEFAULT_CRITICAL_COLOR = '\x1b[31;1m'   # Bold Red
 DEFAULT_DEFAULT_COLOR = '\x1b[0m'               # White
 
-class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler):
+class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler):   # pylint: disable=C0103
     """
     Essentially this is a RotatingFileHandler with a modified doRollover.
     Instead of doing a normal Rollover this creates zip files of old logs.
@@ -79,13 +88,13 @@ class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler)
         Initializes a RotatingFileHandler to append it later with zipping capabilities
         """
 
-        backupCount = kws.get('backupCount', 0)
+        backupCount = kws.get('backupCount', 0) # pylint: disable=C0103
         self.backup_count = backupCount
         encoding = kws.get('encoding', DEFAULT_FILE_ENCODING)
         self.encoding = encoding
         logging.handlers.RotatingFileHandler.__init__(self, filename, **kws)
 
-    def doArchive(self, old_log):
+    def doArchive(self, old_log):   # pylint: disable=C0103
         """
         Write the old log file into a zip file and delete the log file
         """
@@ -120,12 +129,12 @@ class __rotating_file_handler_with_zipping(logging.handlers.RotatingFileHandler)
         if not self.delay:
             self.stream = self._open()
 
-class __buffering_SMTP_handler(logging.handlers.BufferingHandler):
+class __buffering_SMTP_handler(logging.handlers.BufferingHandler):  # pylint: disable=C0103 disable=R0902
     """
     Essentially this is a BufferingHandler extended with SMTP capabilities
     All Logs will be buffered und when flush() is used the Mail will be send
     """
-    def __init__(self, mailhost, port, username, password,
+    def __init__(self, mailhost, port, username, password,  # pylint: disable=R0913
                  fromaddr, toaddrs, subject, capacity, log_format):
         logging.handlers.BufferingHandler.__init__(self, capacity)
         self.mailhost = mailhost
@@ -145,18 +154,18 @@ class __buffering_SMTP_handler(logging.handlers.BufferingHandler):
                 smtp = SMTP(self.mailhost, self.mailport)
                 smtp.starttls()
                 smtp.login(self.username, self.password)
-                msg = f"From: {self.fromaddr}\r\nTo: {','.join(self.toaddrs)}\r\nSubject: {self.subject}\r\n\r\n"
+                msg = f"From: {self.fromaddr}\r\nTo: {','.join(self.toaddrs)}\r\nSubject: {self.subject}\r\n\r\n"   # pylint: disable=C0301
                 for record in self.buffer:
                     s = self.format(record)
                     msg = msg + s + "\r\n"
                 smtp.sendmail(self.fromaddr, self.toaddrs, msg)
                 smtp.quit()
-            except Exception:
+            except Exception:   # pylint: disable=W0718
                 if logging.raiseExceptions:
                     raise
             self.buffer = []
 
-class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler):
+class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler): # pylint: disable=C0103
     """
     Essentially this is a SysLogHandler,
     but instead of the RFC3164 the RFC5424 is used.
@@ -172,7 +181,7 @@ class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler):
         self.appname = kwargs.pop('appname', None)
         super().__init__(*args, **kwargs)
 
-    def format(self, record):
+    def format(self, record):   # pylint: disable=R0914
         version = 1
         asctime = datetime.fromtimestamp(record.created).isoformat()
         m = self.tz_offset.match(strftime('%z'))
@@ -187,7 +196,7 @@ class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler):
             asctime += f'{hrs}:{mins}'
         try:
             hostname = gethostname()
-        except Exception:
+        except Exception:   # pylint: disable=W0718
             hostname = '-'
         appname = self.appname or '-'
         procid = record.process
@@ -219,18 +228,18 @@ class __SysLog_handler_rfc5424(logging.handlers.SysLogHandler):
 
         return f'{version} {asctime} {hostname} {appname} {procid} {msgid} {sdata} {msg}'
 
-class __Custom_formatter(logging.Formatter):
+class __Custom_formatter(logging.Formatter):    # pylint: disable=C0103
     """
     Colored logging formatter
     """
 
-    def __init__(self, fmt, datefmt, time_zone, debug_color,
+    def __init__(self, fmt, datefmt, time_zone, debug_color,    # pylint: disable=R0913
                  info_color, warning_color, error_color, critical_color, default_color):
         super().__init__()
         self.fmt = fmt
         self.datefmt = datefmt
         self.time_zone = time_zone
-        self.FORMATS = {
+        self.FORMATS = {    # pylint: disable=C0103
             logging.DEBUG: debug_color + self.fmt + default_color,
             logging.INFO: info_color + self.fmt + default_color,
             logging.WARNING: warning_color + self.fmt + default_color,
@@ -255,13 +264,13 @@ def _configure_logger(name, handler, loglevel):
     if name in (None, '', 'root'):
         try:
             logger = logging.getLogger()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             print(e)
             sys_exit("Error while creating new root logger")
     else:
         try:
             logger = logging.getLogger(name)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             print(e)
             sys_exit(f"Error while creating {name} Logger")
 
@@ -280,7 +289,7 @@ def _set_timezone_style(time_zone_style):
             set_timezone = 'utc'
         else:
             set_timezone = 'local'
-    except Exception as e:
+    except Exception as e:  # pylint: disable=W0718
         print(e)
         print(f"Couldn't parse inputted timezone style, using default {DEFAULT_TIME_ZONE_STYLE}")
         set_timezone = DEFAULT_TIME_ZONE_STYLE
@@ -317,15 +326,15 @@ def _check_loglevel(loglevel):
         elif 'CRITICAL' in loglevel:
             loglevel = 'CRITICAL'
         else:
-            raise Exception
-    except Exception as e:
+            raise Exception # pylint: disable=W0719
+    except Exception as e:  # pylint: disable=W0718
         print(e)
         print(f"Couldn't parse inputted loglevel, using default {DEFAULT_LOGLEVEL}")
         loglevel = DEFAULT_LOGLEVEL
 
     return loglevel
 
-def create_console_logger(name=DEFAULT_NAME,
+def create_console_logger(name=DEFAULT_NAME,    # pylint: disable=R0913
                           loglevel=DEFAULT_LOGLEVEL,time_zone_style=DEFAULT_TIME_ZONE_STYLE,
                           debug_output_color=DEFAULT_DEBUG_COLOR,
                           info_output_color=DEFAULT_INFO_COLOR,
@@ -357,12 +366,12 @@ def create_console_logger(name=DEFAULT_NAME,
 
     return logger
 
-def create_file_logger(name="File",
+def create_file_logger(name="File", # pylint: disable=R0913
                         log_file=DEFAULT_LOG_FILE,
                         loglevel=DEFAULT_LOGLEVEL,
                         time_zone_style=DEFAULT_TIME_ZONE_STYLE,
-                        maxBytes=DEFAULT_MAX_FILE_SIZE,
-                        backupCount=DEFAULT_FILE_BACKUP_COUNT,
+                        maxBytes=DEFAULT_MAX_FILE_SIZE,         # pylint: disable=C0103
+                        backupCount=DEFAULT_FILE_BACKUP_COUNT,  # pylint: disable=C0103
                         encoding=DEFAULT_FILE_ENCODING):
     """
     Creates a new Rotating File Logger extended with the capability to zip old logs,
@@ -387,8 +396,8 @@ def create_file_logger(name="File",
                                                             maxBytes=maxBytes,
                                                             backupCount=backupCount)
         else:
-            raise Exception
-    except Exception as e:
+            raise Exception # pylint: disable=W0719
+    except Exception as e:  # pylint: disable=W0718
         print(e)
         print("Logfile couldn't be created or given path is empty, changing to StreamHandler")
         handler = logging.StreamHandler()
@@ -403,7 +412,7 @@ def create_file_logger(name="File",
 
     return logger
 
-def create_smtp_logger(name='SMTP',
+def create_smtp_logger(name='SMTP', # pylint: disable=R0913
                         loglevel=DEFAULT_LOGLEVEL,
                         time_zone_style=DEFAULT_TIME_ZONE_STYLE,
                         mailhost=DEFAULT_MAIL_SERVER,
@@ -436,14 +445,14 @@ def create_smtp_logger(name='SMTP',
     if not isinstance(port, int):
         try:
             port = int(port)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             print(e)
             print("The Port has to be int, defaulting to Port 587")
             port = 587
     if not isinstance(capacity, int):
         try:
             capacity = int(capacity)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=W0718
             print(e)
             print("The Capacity has to be int, defaulting to Capacity 100")
             capacity = 100
@@ -459,7 +468,7 @@ def create_smtp_logger(name='SMTP',
     try:
         handler = __buffering_SMTP_handler(mailhost, port, username, password, fromaddr,
                                            toaddrs, subject, capacity, log_format)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=W0718
         print(e)
         print("SMTP Logger couldn't be created, changing to StreamHandler")
         handler = logging.StreamHandler()
@@ -484,7 +493,7 @@ def create_syslog_logger(name="SysLog",
 
     try:
         handler = __SysLog_handler_rfc5424(address=(syslog_address, syslog_port))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=W0718
         print(e)
         print("SysLog Address or Port are wrong or unavailable, changing to StreamHandler")
         handler = logging.StreamHandler()
